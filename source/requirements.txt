@@ -2,3 +2,4 @@ urllib3
 requests
 kubernetes
 websocket-client
+paho-mqtt

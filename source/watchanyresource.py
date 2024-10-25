@@ -6,15 +6,22 @@ import requests
 import websocket, ssl
 import subprocess
 import threading
+import paho.mqtt.client as mqtt
 from kubernetes import config
 from kubernetes.client import configuration
 from subprocess import Popen
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Variables for Kubernetes resource to watch
 groupversion = os.environ.get('GROUPANDVERSION')
 resourcetype = os.environ.get('RESOURCETYPE')
 namespace = os.environ.get('NAMESPACE',"")
+
+# Variables for sending Messages to a broker
+mqtt_broker = os.environ.get('MQTTBROKER',"")
+mqtt_port = os.environ.get('MQTTPORT',"1883")
+mqtt_topic = os.environ.get('MQTTTOPIC',"")
 
 def get_kubeapi_request(httpsession,path,header):
     response = httpsession.get(path, headers=header, verify=False)
@@ -80,6 +87,7 @@ def main():
     k8s_host = ""
     k8s_token = ""
     k8s_headers = ""
+    mqtt_configured = False
  
     if not os.environ.get('INCLUSTER_CONFIG'):
         config.load_kube_config()
@@ -103,6 +111,20 @@ def main():
 
     uri = api_path+'/'+api_obj
     print("Connecting to - "+k8s_host+"/"+uri)
+
+    if (mqtt_broker != "" and mqtt_topic == ""):
+        print("MQTT Disabled or MQTT Topic not specified. Ignoring...")
+    else:
+        print(f"MQTT Configured. Broker: {mqtt_broker}, Topic: {mqtt_topic}")
+        mqtt_configured = True
+
+    if mqtt_configured == True:
+        mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        try:
+            mqtt_client.connect(mqtt_broker, int(mqtt_port), 60)
+        except Exception as e:
+            print(f"Failed to connect to MQTT broker: {e}")
+        mqtt_client.loop_start()      
     
     while True:
         init_res_version_data = get_kubeapi_request(k8s_session,k8s_host + '/' + uri, k8s_headers)
@@ -121,6 +143,11 @@ def main():
                     if msg:
                         x = threading.Thread(target=handleMsgThread, args=(msg,))
                         x.start()
+
+                        if mqtt_configured:
+                            if mqtt_client.is_connected():
+                                m_info = mqtt_client.publish(mqtt_topic, msg, 1)
+                                m_info.wait_for_publish(1)
                 except Exception as e:
                     print("Exception occured while waiting for msg.")
                     print(e)
