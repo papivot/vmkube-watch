@@ -1,15 +1,15 @@
 # vmkube-watch
 
 ## Project Description
-vmkube-watch is a Kubernetes controller/watcher that monitors specified Kubernetes resources for ADDED, MODIFIED, or DELETED events. Upon detecting an event, it executes user-defined scripts located in correspondingly named subdirectories (`/app/added`, `/app/modified`, `/app/deleted`). This allows for custom, event-driven automation within a Kubernetes cluster.
+**vmkube-watch** is a Kubernetes controller/watcher that monitors specified Kubernetes resources for ADDED, MODIFIED, or DELETED events. Upon detecting an event, it executes user-defined scripts in corresponding subdirectories (`/app/added`, `/app/modified`, `/app/deleted`). This allows for custom, event-driven automation within a Kubernetes cluster.
 
 ## Purpose
-The main purpose is to provide a flexible way to react to changes in Kubernetes resources without writing a full custom controller in Go. It's useful for operational tasks, notifications, or simple automation triggered by resource lifecycle events.
+The primary purpose is to provide a flexible way to react to changes in Kubernetes resources without writing a complete custom controller in Go. It's useful for operational tasks, notifications, or simple automation triggered by resource lifecycle events.
 
 ## Prerequisites
-- Docker installed and running.
+- Docker is installed and running.
 - A Kubernetes cluster (e.g., Minikube, Kind, or a cloud provider's K8s service).
-- `kubectl` configured to communicate with your cluster.
+- `kubectl` is configured to communicate with your cluster.
 
 ## Configuration (Environment Variables)
 - `INCLUSTER_CONFIG`: Set to "1" to use in-cluster Kubernetes configuration (service account). If not set or set to something else, it will attempt to use a local kubeconfig file.
@@ -23,9 +23,10 @@ The main purpose is to provide a flexible way to react to changes in Kubernetes 
 ## Building and Running the Docker Image
 - `cd source`
 - `docker build -t vmkube-watch:latest .`
-- Example run (for local testing, assuming local kubeconfig): `docker run -e GROUPANDVERSION="v1" -e RESOURCETYPE="pods" -v ~/.kube:/root/.kube:ro vmkube-watch:latest` (Note: The Dockerfile user `appuser` might need write access to `/user/appuser` if Python caching is involved there, or adjust HOME. The current Dockerfile sets `HOME` to `/user/appuser` but `appuser` might not have a home dir created. The `cache-volume` in k8s handles this by mounting an `emptyDir`).
+- Example run (for local testing, assuming local kubeconfig): `docker run -e GROUPANDVERSION="v1" -e RESOURCETYPE="pods" -v ~/.kube:/root/.kube:ro vmkube-watch:latest` (Note: The Dockerfile user `appuser` might need write access to `/user/appuser` if Python caching is involved there, or adjust HOME. The current Dockerfile sets `HOME` to `/user/appuser`, but `appuser` might not have a home dir created. The `cache-volume` in k8s handles this by mounting an `emptyDir`.
 
 ## Deploying to Kubernetes
+- Create a namespace (e.g., vmkube-watch)
 - Review and modify `source/kubedeployment.yaml` as needed (e.g., namespace, ConfigMap scripts).
 - `kubectl apply -f source/kubedeployment.yaml -n <your-namespace>` (ensure the namespace exists or create it).
 
@@ -36,4 +37,4 @@ The main purpose is to provide a flexible way to react to changes in Kubernetes 
 
 ## Kubernetes RBAC
 - The `kubedeployment.yaml` sets up a `ServiceAccount` (`vmkube-watch-sa`), `ClusterRole` (`vmkube-watch-cr`), and `ClusterRoleBinding` (`vmkube-watch-crb`).
-- By default, the ClusterRole grants `get`, `list`, `watch` permissions on *all* resources (`*.*`) and non-resource URLs. This is very broad. For production, it's highly recommended to restrict this to only the specific resources the controller needs to watch. For example, if watching only pods in a specific namespace, the Role/ClusterRole should reflect that.
+- By default, the ClusterRole grants `get`, `list`, `watch` permissions on *all* resources (`*.*`) and non-resource URLs. This is very broad. For production, it's highly recommended to restrict this to only the specific resources the controller needs to watch. For example, if watching only pods within a particular namespace, the Role/ClusterRole should reflect that.
