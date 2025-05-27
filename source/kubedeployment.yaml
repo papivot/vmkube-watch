@@ -75,7 +75,7 @@ spec:
             configMapKeyRef:
               name: vmkube-watch-cm
               key: namespace
-        image: us-central1-docker.pkg.dev/navneet-410819/whoami6443-hub/whoami6443/vmkube-watch:0.2.0
+        image: us-central1-docker.pkg.dev/navneet-410819/whoami6443-hub/whoami6443/vmkube-watch:0.2.1
         imagePullPolicy: Always
         name: vmkube-watch
         livenessProbe:
