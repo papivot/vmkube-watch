@@ -75,9 +75,27 @@ spec:
             configMapKeyRef:
               name: vmkube-watch-cm
               key: namespace
-        image: us-central1-docker.pkg.dev/navneet-410819/whoami6443-hub/whoami6443/vmkube-watch:0.1.2
+        image: us-central1-docker.pkg.dev/navneet-410819/whoami6443-hub/whoami6443/vmkube-watch:0.2.0
         imagePullPolicy: Always
         name: vmkube-watch
+        livenessProbe:
+          exec:
+            command:
+            - pgrep
+            - -f
+            - watchanyresource.py
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pgrep
+            - -f
+            - watchanyresource.py
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
         resources:
           limits:
             cpu: 100m
@@ -102,8 +120,6 @@ spec:
           name: cache-volume
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
-        stdin: true
-        tty: true
       volumes:
       - name: config-volume-deleted
         configMap:
