@@ -20,7 +20,7 @@ RUN adduser \
 
 # Install jq and clean up apt cache
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends jq && \
+    apt-get install -y --no-install-recommends jq procps && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
